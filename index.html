@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulpixEditor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0a0a0c;--bg2:#111116;--bg3:#18181f;--bg4:#1f1f2a;
+--accent:#ff5c00;--accent2:#ff9500;--accent3:#00d4ff;
+--text:#e8e8f0;--text2:#9898b0;--text3:#5a5a70;
+--border:#2a2a38;--border2:#3a3a50;
+--panel:#13131a;--panel2:#1a1a24;
+--success:#00e676;--warning:#ffab00;--error:#ff1744;
+--font-mono:'Space Mono',monospace;--font-ui:'Syne',sans-serif;
+--track-h:52px;--header-h:36px;--toolbar-h:48px;--timeline-h:220px;--panel-w:300px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
+#root{width:100%;height:100%;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* MENU BAR */
+.menubar{height:var(--header-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 8px;gap:2px;z-index:1000;position:relative;flex-shrink:0}
+.menubar-logo{font-family:var(--font-ui);font-weight:800;font-size:14px;color:var(--accent);letter-spacing:2px;margin-right:12px;text-transform:uppercase}
+.menu-item{position:relative}
+.menu-btn{background:none;border:none;color:var(--text2);font-family:var(--font-ui);font-size:12px;font-weight:600;padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:.5px;transition:all .15s}
+.menu-btn:hover,.menu-btn.active{background:var(--bg4);color:var(--text)}
+.dropdown{position:absolute;top:100%;left:0;min-width:200px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:2000;display:none;overflow:hidden}
+.dropdown.open{display:block}
+.dropdown-item{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .12s;gap:16px}
+.dropdown-item:hover{background:var(--bg4);color:var(--text)}
+.dropdown-item .shortcut{color:var(--text3);font-family:var(--font-mono);font-size:10px}
+.dropdown-sep{height:1px;background:var(--border);margin:4px 0}
+.menu-spacer{flex:1}
+.menu-status{font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:0 12px}
+
+/* TOOLBAR */
+.toolbar{height:var(--toolbar-h);background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:4px;flex-shrink:0}
+.tool-btn{width:34px;height:34px;background:none;border:1px solid transparent;border-radius:5px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:14px}
+.tool-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--text)}
+.tool-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tool-sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+.toolbar-group{display:flex;align-items:center;gap:2px}
+.tb-label{font-size:10px;color:var(--text3);font-family:var(--font-mono);padding:0 6px}
+.tb-input{background:var(--bg4);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:4px 8px;border-radius:4px;width:60px;text-align:center}
+.tb-input:focus{outline:none;border-color:var(--accent)}
+
+/* MAIN AREA */
+.main-area{flex:1;display:flex;overflow:hidden}
+.left-panel{width:var(--panel-w);background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.center-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.right-panel{width:var(--panel-w);background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+
+/* PANEL HEADERS */
+.panel-header{height:32px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0}
+.panel-title{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--text3);text-transform:uppercase}
+.panel-tabs{display:flex;gap:0}
+.panel-tab{padding:0 12px;height:32px;display:flex;align-items:center;font-size:11px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-weight:600}
+.panel-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.panel-tab:hover:not(.active){color:var(--text2)}
+
+/* PREVIEW */
+.preview-area{flex:1;background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.canvas-wrap{position:relative;box-shadow:0 0 0 1px var(--border2),0 16px 64px rgba(0,0,0,.8)}
+#previewCanvas{display:block;background:#000}
+.preview-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
+.preview-controls{height:40px;background:var(--panel);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.play-btn{width:32px;height:32px;background:var(--accent);border:none;border-radius:50%;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.play-btn:hover{transform:scale(1.1)}
+.time-display{font-family:var(--font-mono);font-size:12px;color:var(--text2)}
+.timecode{color:var(--accent);font-weight:700}
+.vol-wrap{display:flex;align-items:center;gap:6px;margin-left:auto}
+.preview-slider{-webkit-appearance:none;width:80px;height:3px;background:var(--bg4);border-radius:2px;outline:none}
+.preview-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:var(--accent);border-radius:50%;cursor:pointer}
+
+/* TIMELINE */
+.timeline-area{height:var(--timeline-h);background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.timeline-header{height:28px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 8px;gap:8px}
+.timeline-ruler{flex:1;height:28px;position:relative;overflow:hidden}
+.timeline-body{flex:1;display:flex;overflow:hidden}
+.tracks-label{width:140px;flex-shrink:0;overflow-y:auto;background:var(--panel);border-right:1px solid var(--border)}
+.tracks-canvas-wrap{flex:1;overflow:auto;position:relative}
+.track-label{height:var(--track-h);display:flex;align-items:center;padding:0 10px;border-bottom:1px solid var(--border);gap:8px;cursor:pointer}
+.track-label:hover{background:var(--bg4)}
+.track-color{width:3px;height:28px;border-radius:2px}
+.track-name{font-size:11px;color:var(--text2);font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-icons{display:flex;gap:4px}
+.track-icon{width:18px;height:18px;background:none;border:none;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:10px;transition:all .12s}
+.track-icon:hover{background:var(--bg4);color:var(--text)}
+.add-track-btn{height:28px;display:flex;align-items:center;padding:0 10px;gap:6px;cursor:pointer;color:var(--text3);font-size:11px;font-weight:600;transition:all .15s}
+.add-track-btn:hover{color:var(--accent)}
+#timelineCanvas{display:block;cursor:pointer}
+.timeline-scrubber{position:absolute;top:0;width:2px;background:var(--accent);height:100%;pointer-events:none;z-index:10}
+.timeline-scrubber::before{content:'';position:absolute;top:-4px;left:-5px;width:12px;height:12px;background:var(--accent);border-radius:50%}
+
+/* LEFT PANEL */
+.asset-list{flex:1;overflow-y:auto;padding:8px}
+.asset-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:5px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.asset-item:hover{background:var(--bg4);border-color:var(--border)}
+.asset-item.selected{background:rgba(255,92,0,.1);border-color:var(--accent)}
+.asset-thumb{width:48px;height:36px;background:var(--bg4);border-radius:3px;object-fit:cover;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.asset-info{flex:1;min-width:0}
+.asset-name{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.asset-meta{font-size:10px;color:var(--text3);font-family:var(--font-mono)}
+.upload-zone{margin:8px;border:2px dashed var(--border2);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(255,92,0,.05)}
+.upload-zone svg{margin-bottom:8px;color:var(--text3)}
+.upload-zone p{font-size:11px;color:var(--text3)}
+.upload-zone strong{color:var(--accent)}
+
+/* RIGHT PANEL - EFFECTS & PROPERTIES */
+.props-scroll{flex:1;overflow-y:auto;padding:8px}
+.prop-group{margin-bottom:12px;background:var(--bg3);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.prop-group-header{padding:8px 12px;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);background:var(--bg4);display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.prop-group-header:hover{color:var(--text2)}
+.prop-group-body{padding:8px}
+.prop-row{display:flex;align-items:center;gap:8px;padding:4px 0;min-height:28px}
+.prop-label{font-size:11px;color:var(--text3);width:110px;flex-shrink:0;font-weight:600}
+.prop-value{flex:1;display:flex;align-items:center;gap:6px}
+.prop-slider{-webkit-appearance:none;flex:1;height:4px;background:var(--bg4);border-radius:2px;outline:none;cursor:pointer}
+.prop-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--accent);border-radius:50%;cursor:pointer;box-shadow:0 0 0 2px rgba(255,92,0,.3)}
+.prop-num{width:52px;background:var(--bg4);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:11px;padding:3px 6px;border-radius:4px;text-align:right}
+.prop-num:focus{outline:none;border-color:var(--accent)}
+.prop-color{width:28px;height:22px;border:1px solid var(--border2);border-radius:4px;cursor:pointer;overflow:hidden;padding:0}
+.prop-color::-webkit-color-swatch-wrapper{padding:0}
+.prop-color::-webkit-color-swatch{border:none}
+.prop-bool{position:relative;width:34px;height:18px;flex-shrink:0}
+.prop-bool input{opacity:0;width:0;height:0}
+.prop-bool-track{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--bg4);border-radius:9px;cursor:pointer;transition:.2s;border:1px solid var(--border2)}
+.prop-bool input:checked+.prop-bool-track{background:var(--accent);border-color:var(--accent)}
+.prop-bool-thumb{position:absolute;top:2px;left:2px;width:12px;height:12px;background:#fff;border-radius:50%;transition:.2s}
+.prop-bool input:checked~.prop-bool-track .prop-bool-thumb,.prop-bool input:checked+.prop-bool-track::after{left:16px}
+.prop-bool-track::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;background:#fff;border-radius:50%;transition:.2s}
+.prop-bool input:checked+.prop-bool-track::after{left:16px}
+.prop-select{flex:1;background:var(--bg4);border:1px solid var(--border);color:var(--text);font-family:var(--font-ui);font-size:11px;padding:3px 6px;border-radius:4px;cursor:pointer}
+.prop-select:focus{outline:none;border-color:var(--accent)}
+
+/* EFFECTS LIST */
+.effect-tag{display:inline-flex;align-items:center;gap:6px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2);margin:3px;cursor:pointer;transition:all .15s}
+.effect-tag:hover{border-color:var(--accent2);color:var(--text)}
+.effect-tag.active{background:rgba(255,92,0,.15);border-color:var(--accent);color:var(--accent)}
+.effect-tag .remove-fx{color:var(--text3);margin-left:2px;font-size:10px}
+.effect-tag .remove-fx:hover{color:var(--error)}
+.fx-grid{display:flex;flex-wrap:wrap;gap:0;padding:6px}
+.add-fx-btn{width:100%;margin-top:4px;padding:6px;background:none;border:1px dashed var(--border);color:var(--text3);border-radius:5px;cursor:pointer;font-size:11px;font-family:var(--font-ui);font-weight:600;transition:all .15s}
+.add-fx-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:5000;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:24px;min-width:340px;max-width:500px;box-shadow:0 24px 80px rgba(0,0,0,.8)}
+.modal h2{font-size:16px;font-weight:800;margin-bottom:16px;color:var(--text)}
+.modal-row{margin-bottom:12px}
+.modal-row label{display:block;font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600}
+.modal-row input,.modal-row select{width:100%;background:var(--bg4);border:1px solid var(--border2);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:8px 10px;border-radius:5px}
+.modal-row input:focus,.modal-row select:focus{outline:none;border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+.btn{padding:8px 18px;border-radius:5px;border:none;font-family:var(--font-ui);font-weight:700;font-size:12px;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#ff7300}
+.btn-ghost{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.btn-danger{background:var(--error);color:#fff}
+
+/* FX PICKER */
+.fx-picker-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:300px;overflow-y:auto;margin-top:12px}
+.fx-pick-item{padding:8px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);transition:all .15s}
+.fx-pick-item:hover{border-color:var(--accent);color:var(--accent);background:rgba(255,92,0,.08)}
+
+/* TEXT TOOL */
+.text-input-wrap{position:absolute;display:none;z-index:100}
+.text-input-wrap textarea{background:rgba(0,0,0,.7);border:2px solid var(--accent);color:#fff;font-size:24px;padding:8px;border-radius:4px;resize:both;min-width:200px;min-height:40px}
+
+/* CONTEXT MENU */
+.ctx-menu{position:fixed;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:4000;display:none;min-width:160px;overflow:hidden}
+.ctx-menu.open{display:block}
+.ctx-item{padding:7px 14px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .1s}
+.ctx-item:hover{background:var(--bg4);color:var(--text)}
+.ctx-sep{height:1px;background:var(--border);margin:3px 0}
+
+/* FONT PANEL */
+.font-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:200px;overflow-y:auto}
+.font-item{padding:6px 8px;background:var(--bg4);border-radius:4px;cursor:pointer;font-size:12px;border:1px solid transparent;transition:all .12s}
+.font-item:hover{border-color:var(--border2)}
+.font-item.selected{border-color:var(--accent);background:rgba(255,92,0,.08)}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:10px 16px;font-size:12px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.5);animation:slideIn .2s ease;pointer-events:all;display:flex;align-items:center;gap:10px}
+.toast.success{border-left:3px solid var(--success)}
+.toast.error{border-left:3px solid var(--error)}
+.toast.info{border-left:3px solid var(--accent3)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* RESIZE HANDLE */
+.resize-h{width:100%;height:4px;background:transparent;cursor:row-resize;flex-shrink:0;transition:background .15s}
+.resize-h:hover,.resize-h.dragging{background:var(--accent)}
+.resize-v{width:4px;height:100%;background:transparent;cursor:col-resize;flex-shrink:0;transition:background .15s}
+.resize-v:hover,.resize-v.dragging{background:var(--accent)}
+
+/* COMPOSITION BANNER */
+.comp-banner{background:rgba(255,92,0,.12);border:1px solid rgba(255,92,0,.3);border-radius:5px;padding:8px 12px;margin:8px;font-size:11px;color:var(--accent2);display:flex;align-items:center;gap:8px;cursor:pointer}
+.comp-banner:hover{background:rgba(255,92,0,.2)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="ctx-menu" id="ctxMenu"></div>
+
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
+
+// ─── WEBGL ENGINE ────────────────────────────────────────────────────
+const SHADERS={
+  tint:{frag:`precision mediump float;uniform sampler2D u_tex;uniform vec3 u_color;uniform float u_strength;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 tinted=mix(c.rgb,u_color,u_strength);gl_FragColor=vec4(tinted,c.a);}`},
+  tzatzkiLens:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_radius;uniform float u_strength;varying vec2 v_uv;void main(){vec2 uv=v_uv-.5;float d=length(uv);float f=1.0+u_strength*(1.0-d/u_radius)*step(d,u_radius);gl_FragColor=texture2D(u_tex,.5+uv/f);}`},
+  turbulentDisplace:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_time;varying vec2 v_uv;float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}void main(){vec2 uv=v_uv;float nx=noise(uv*4.0+u_time*.5);float ny=noise(uv*4.0+u_time*.5+100.0);vec2 d=vec2(nx-.5,ny-.5)*u_amount*.05;gl_FragColor=texture2D(u_tex,uv+d);}`},
+  wiggle:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_speed;uniform float u_time;varying vec2 v_uv;void main(){vec2 uv=v_uv;uv.x+=sin(uv.y*10.0+u_time*u_speed)*u_amount*.02;uv.y+=cos(uv.x*10.0+u_time*u_speed)*u_amount*.02;gl_FragColor=texture2D(u_tex,uv);}`},
+  noise:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_time;varying vec2 v_uv;float rand(vec2 co){return fract(sin(dot(co,vec2(12.9898,78.233)))*43758.5453);}void main(){vec4 c=texture2D(u_tex,v_uv);float n=rand(v_uv+u_time)*u_amount;gl_FragColor=vec4(c.rgb+n-u_amount*.5,c.a);}`},
+  meshGlitch:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_time;varying vec2 v_uv;float rand(float x){return fract(sin(x)*43758.5453);}void main(){vec2 uv=v_uv;float t=floor(u_time*8.0);float sl=floor(uv.y*20.0);if(rand(sl+t)<u_amount*.3){uv.x+=rand(sl+t+1.0)*u_amount*.1-.05;}gl_FragColor=texture2D(u_tex,uv);}`},
+  glitch:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_time;varying vec2 v_uv;float rand(float x){return fract(sin(x*127.1)*43758.5453);}void main(){vec2 uv=v_uv;float t=floor(u_time*15.0);float sl=floor(uv.y*50.0);float shift=0.0;if(rand(sl+t)<u_amount*.5)shift=(rand(sl+t+.5)-.5)*u_amount*.08;vec4 r=texture2D(u_tex,vec2(uv.x+shift,uv.y));vec4 g=texture2D(u_tex,uv);vec4 b=texture2D(u_tex,vec2(uv.x-shift,uv.y));gl_FragColor=vec4(r.r,g.g,b.b,1.0);}`},
+  kaleidoscope:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_segments;varying vec2 v_uv;void main(){vec2 uv=v_uv-.5;float angle=atan(uv.y,uv.x);float r=length(uv);float seg=3.14159*2.0/u_segments;angle=mod(angle,seg);if(mod(floor(atan(uv.y,uv.x)/seg),2.0)==1.0)angle=seg-angle;gl_FragColor=texture2D(u_tex,vec2(cos(angle),sin(angle))*r+.5);}`},
+  chromaticAberration:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;varying vec2 v_uv;void main(){vec2 d=(v_uv-.5)*u_amount*.02;gl_FragColor=vec4(texture2D(u_tex,v_uv+d).r,texture2D(u_tex,v_uv).g,texture2D(u_tex,v_uv-d).b,1.0);}`},
+  waveWarp:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amplitude;uniform float u_frequency;uniform float u_time;varying vec2 v_uv;void main(){vec2 uv=v_uv;uv.y+=sin(uv.x*u_frequency*6.28+u_time)*u_amplitude*.05;uv.x+=cos(uv.y*u_frequency*6.28+u_time*.7)*u_amplitude*.02;gl_FragColor=texture2D(u_tex,uv);}`},
+  swirl:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_angle;uniform float u_radius;varying vec2 v_uv;void main(){vec2 uv=v_uv-.5;float d=length(uv);float a=atan(uv.y,uv.x)+u_angle*(1.0-d/u_radius)*step(d,u_radius);gl_FragColor=texture2D(u_tex,.5+vec2(cos(a),sin(a))*d);}`},
+  motionTile:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_cols;uniform float u_rows;uniform float u_time;varying vec2 v_uv;void main(){vec2 uv=fract(v_uv*vec2(u_cols,u_rows)+u_time*.1);gl_FragColor=texture2D(u_tex,uv);}`},
+  typewriter:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_progress;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float mask=step(v_uv.x,u_progress);gl_FragColor=vec4(c.rgb*mask,c.a*mask);}`},
+  colorBalance:{frag:`precision mediump float;uniform sampler2D u_tex;uniform vec3 u_shadows;uniform vec3 u_midtones;uniform vec3 u_highlights;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float lum=dot(c.rgb,vec3(.299,.587,.114));vec3 s=u_shadows*(1.0-lum);vec3 h=u_highlights*lum;vec3 m=u_midtones*(1.0-abs(lum*2.0-1.0));gl_FragColor=vec4(clamp(c.rgb+s+h+m,0.0,1.0),c.a);}`},
+  hueSaturation:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_hue;uniform float u_saturation;uniform float u_lightness;varying vec2 v_uv;vec3 rgb2hsl(vec3 c){float mx=max(max(c.r,c.g),c.b);float mn=min(min(c.r,c.g),c.b);float h=0.0,s=0.0,l=(mx+mn)/2.0;if(mx!=mn){float d=mx-mn;s=l>.5?d/(2.0-mx-mn):d/(mx+mn);if(mx==c.r)h=(c.g-c.b)/d+(c.g<c.b?6.0:0.0);else if(mx==c.g)h=(c.b-c.r)/d+2.0;else h=(c.r-c.g)/d+4.0;h/=6.0;}return vec3(h,s,l);}float hue2rgb(float p,float q,float t){if(t<0.0)t+=1.0;if(t>1.0)t-=1.0;if(t<1.0/6.0)return p+(q-p)*6.0*t;if(t<1.0/2.0)return q;if(t<2.0/3.0)return p+(q-p)*(2.0/3.0-t)*6.0;return p;}vec3 hsl2rgb(vec3 hsl){if(hsl.y==0.0)return vec3(hsl.z);float q=hsl.z<.5?hsl.z*(1.0+hsl.y):hsl.z+hsl.y-hsl.z*hsl.y;float p=2.0*hsl.z-q;return vec3(hue2rgb(p,q,hsl.x+1.0/3.0),hue2rgb(p,q,hsl.x),hue2rgb(p,q,hsl.x-1.0/3.0));}void main(){vec4 c=texture2D(u_tex,v_uv);vec3 hsl=rgb2hsl(c.rgb);hsl.x=fract(hsl.x+u_hue/360.0);hsl.y=clamp(hsl.y*u_saturation,0.0,1.0);hsl.z=clamp(hsl.z+u_lightness,0.0,1.0);gl_FragColor=vec4(hsl2rgb(hsl),c.a);}`},
+  invert:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);gl_FragColor=vec4(mix(c.rgb,1.0-c.rgb,u_amount),c.a);}`},
+  bloom:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_threshold;uniform float u_intensity;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float brightness=dot(c.rgb,vec3(.2126,.7152,.0722));vec4 bloom=vec4(0.0);float w=0.0;for(int i=-4;i<=4;i++){for(int j=-4;j<=4;j++){vec2 offset=vec2(float(i),float(j))*0.003;vec4 s=texture2D(u_tex,v_uv+offset);float b=dot(s.rgb,vec3(.2126,.7152,.0722));if(b>u_threshold){bloom+=s;w+=1.0;}}}if(w>0.0)bloom/=w;gl_FragColor=c+bloom*u_intensity;}`},
+  vignette:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_softness;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec2 uv=v_uv-.5;float d=length(uv);float v=1.0-smoothstep(u_softness,1.0,d*u_amount*2.0);gl_FragColor=vec4(c.rgb*v,c.a);}`},
+  channelMixer:{frag:`precision mediump float;uniform sampler2D u_tex;uniform vec3 u_red;uniform vec3 u_green;uniform vec3 u_blue;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float r=dot(c.rgb,u_red);float g=dot(c.rgb,u_green);float b=dot(c.rgb,u_blue);gl_FragColor=vec4(clamp(vec3(r,g,b),0.0,1.0),c.a);}`},
+  exposure:{frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_exposure;uniform float u_gamma;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 ex=c.rgb*pow(2.0,u_exposure);gl_FragColor=vec4(pow(clamp(ex,0.0,1.0),vec3(1.0/u_gamma)),c.a);}`}
+};
+
+const VERT=`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=a_pos*.5+.5;gl_Position=vec4(a_pos,0,1);}`;
+
+function createGLProgram(gl,frag){
+  function compile(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s;}
+  const p=gl.createProgram();
+  gl.attachShader(p,compile(gl.VERTEX_SHADER,VERT));
+  gl.attachShader(p,compile(gl.FRAGMENT_SHADER,frag));
+  gl.linkProgram(p);
+  return p;
+}
+
+function applyWebGLEffect(srcCanvas,effectName,params){
+  const dst=document.createElement('canvas');
+  dst.width=srcCanvas.width;dst.height=srcCanvas.height;
+  const gl=dst.getContext('webgl');
+  if(!gl)return srcCanvas;
+  const shader=SHADERS[effectName];
+  if(!shader)return srcCanvas;
+  const prog=createGLProgram(gl,shader.frag);
+  gl.useProgram(prog);
+  const buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(prog,'a_pos');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const tex=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,srcCanvas);
+  gl.uniform1i(gl.getUniformLocation(prog,'u_tex'),0);
+  Object.entries(params||{}).forEach(([k,v])=>{
+    const ul=gl.getUniformLocation(prog,k);
+    if(!ul)return;
+    if(typeof v==='number')gl.uniform1f(ul,v);
+    else if(Array.isArray(v)&&v.length===3)gl.uniform3fv(ul,v);
+  });
+  gl.viewport(0,0,dst.width,dst.height);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  return dst;
+}
+
+// ─── EFFECT DEFAULTS ─────────────────────────────────────────────────
+const EFFECT_DEFS={
+  tint:{label:'Tint',params:{u_color:[1,.5,.2],u_strength:.3}},
+  tzatzkiLens:{label:'Tzatzki Lens',params:{u_radius:.5,u_strength:.5}},
+  turbulentDisplace:{label:'Turbulent Displace',params:{u_amount:.5,u_time:0}},
+  wiggle:{label:'Wiggle',params:{u_amount:.5,u_speed:2,u_time:0}},
+  noise:{label:'Noise',params:{u_amount:.1,u_time:0}},
+  meshGlitch:{label:'Mesh Glitch',params:{u_amount:.3,u_time:0}},
+  glitch:{label:'Glitch',params:{u_amount:.3,u_time:0}},
+  kaleidoscope:{label:'Kaleidoscope',params:{u_segments:6}},
+  chromaticAberration:{label:'Chromatic Aberration',params:{u_amount:.5}},
+  waveWarp:{label:'Wave Warp',params:{u_amplitude:.5,u_frequency:2,u_time:0}},
+  swirl:{label:'Swirl',params:{u_angle:1.5,u_radius:.5}},
+  motionTile:{label:'Motion Tile',params:{u_cols:2,u_rows:2,u_time:0}},
+  typewriter:{label:'Typewriter',params:{u_progress:.5}},
+  colorBalance:{label:'Color Balance',params:{u_shadows:[0,0,0],u_midtones:[0,0,0],u_highlights:[0,0,0]}},
+  hueSaturation:{label:'Hue/Saturation',params:{u_hue:0,u_saturation:1,u_lightness:0}},
+  invert:{label:'Invert',params:{u_amount:1}},
+  bloom:{label:'Bloom',params:{u_threshold:.6,u_intensity:.5}},
+  vignette:{label:'Vignette',params:{u_amount:.8,u_softness:.5}},
+  channelMixer:{label:'Channel Mixer',params:{u_red:[1,0,0],u_green:[0,1,0],u_blue:[0,0,1]}},
+  exposure:{label:'Exposure',params:{u_exposure:0,u_gamma:2.2}}
+};
+
+// ─── HISTORY ─────────────────────────────────────────────────────────
+function useHistory(initial){
+  const [stack,setStack]=useState([initial]);
+  const [idx,setIdx]=useState(0);
+  const state=stack[idx];
+  const push=useCallback(s=>setStack(prev=>{const n=[...prev.slice(0,idx+1),s];setIdx(n.length-1);return n;}),[idx]);
+  const undo=useCallback(()=>setIdx(i=>Math.max(0,i-1)),[]);
+  const redo=useCallback(()=>setIdx(i=>Math.min(stack.length-1,i+1)),[stack.length]);
+  return[state,push,undo,redo];
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────
+function showToast(msg,type='info'){
+  const w=document.getElementById('toastWrap');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.textContent=msg;
+  w.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300)},2500);
+}
+
+// ─── ICONS (SVG inline) ───────────────────────────────────────────────
+const I={
+  new:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+  open:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>,
+  save:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  export:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  upload:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>,
+  undo:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>,
+  redo:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>,
+  play:<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+  pause:<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>,
+  text:'T',
+  select:'⬚',
+  cut:'✂',
+  plus:'+',
+  eye:'👁',
+  lock:'🔒',
+  del:'🗑',
+  img:'🖼',
+  vid:'🎬',
+  vol:'🔊',
+  fx:'✨',
+};
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────
+const INITIAL={
+  compW:1920,compH:1080,fps:30,duration:10,
+  layers:[
+    {id:'l1',name:'Layer 1',type:'video',color:'#ff5c00',visible:true,locked:false,effects:[],transform:{x:0,y:0,scale:1,rotate:0},text:null,asset:null,clips:[{id:'c1',start:0,end:8,trackIdx:0}]},
+    {id:'l2',name:'Audio',type:'audio',color:'#00d4ff',visible:true,locked:false,effects:[],transform:{x:0,y:0,scale:1,rotate:0},text:null,asset:null,clips:[{id:'c2',start:1,end:9,trackIdx:1}]},
+  ],
+  assets:[],
+  texts:[],
+  clipboard:null,
+};
+
+function App(){
+  const[proj,setProj,undo,redo]=useHistory(INITIAL);
+  const[selectedLayer,setSelectedLayer]=useState('l1');
+  const[playing,setPlaying]=useState(false);
+  const[currentTime,setCurrentTime]=useState(0);
+  const[tool,setTool]=useState('select');
+  const[zoom,setZoom]=useState(100);
+  const[leftTab,setLeftTab]=useState('assets');
+  const[rightTab,setRightTab]=useState('effects');
+  const[activeMenus,setActiveMenus]=useState({});
+  const[modal,setModal]=useState(null);
+  const[fxPicker,setFxPicker]=useState(false);
+  const[compBanner,setCompBanner]=useState(true);
+  const canvasRef=useRef(null);
+  const tlCanvasRef=useRef(null);
+  const animRef=useRef(null);
+  const fileInputRef=useRef(null);
+  const startTimeRef=useRef(0);
+
+  const selLayer=proj.layers.find(l=>l.id===selectedLayer);
+
+  // ── PLAYBACK ──────────────────────────────────────────────────────
+  useEffect(()=>{
+    if(playing){
+      startTimeRef.current=Date.now()-currentTime*1000;
+      animRef.current=setInterval(()=>{
+        const t=(Date.now()-startTimeRef.current)/1000;
+        if(t>=proj.duration){setPlaying(false);setCurrentTime(0);}
+        else setCurrentTime(t);
+      },1000/proj.fps);
+    } else clearInterval(animRef.current);
+    return()=>clearInterval(animRef.current);
+  },[playing,proj.duration,proj.fps]);
+
+  // ── RENDER PREVIEW ────────────────────────────────────────────────
+  useEffect(()=>{
+    const cv=canvasRef.current;if(!cv)return;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
+    // draw layers
+    proj.layers.filter(l=>l.visible&&l.type!=='audio').forEach(l=>{
+      if(l.asset&&(l.asset.type==='image'||l.asset.type==='video')){
+        try{
+          const img=new Image();img.src=l.asset.src;
+          ctx.save();
+          ctx.translate(cv.width/2+l.transform.x,cv.height/2+l.transform.y);
+          ctx.rotate(l.transform.rotate*Math.PI/180);
+          ctx.scale(l.transform.scale,l.transform.scale);
+          ctx.drawImage(img,-cv.width/2,-cv.height/2,cv.width,cv.height);
+          ctx.restore();
+        }catch(e){}
+      } else {
+        ctx.save();
+        ctx.fillStyle=l.color+'33';
+        ctx.fillRect(0,0,cv.width,cv.height);
+        ctx.restore();
+      }
+      if(l.text){
+        ctx.save();
+        ctx.font=`${l.text.size||48}px ${l.text.font||'Syne'}`;
+        ctx.fillStyle=l.text.color||'#fff';
+        ctx.textAlign='center';
+        ctx.fillText(l.text.content||'',cv.width/2+l.transform.x,cv.height/2+l.transform.y);
+        ctx.restore();
+      }
+    });
+    // overlay timecode
+    ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(8,8,160,22);
+    ctx.fillStyle='#ff9500';ctx.font='12px Space Mono';
+    const m=Math.floor(currentTime/60);const s=Math.floor(currentTime%60);const f=Math.floor((currentTime%1)*proj.fps);
+    ctx.fillText(`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}:${String(f).padStart(2,'0')}`,14,23);
+  },[proj,currentTime,selectedLayer]);
+
+  // ── TIMELINE RENDER ───────────────────────────────────────────────
+  useEffect(()=>{
+    const cv=tlCanvasRef.current;if(!cv)return;
+    const ctx=cv.getContext('2d');
+    const W=cv.width,H=cv.height;
+    const TRACK_H=52,pxPerSec=W/proj.duration;
+    ctx.fillStyle='#111116';ctx.fillRect(0,0,W,H);
+    // ruler
+    ctx.fillStyle='#18181f';ctx.fillRect(0,0,W,20);
+    ctx.fillStyle='#5a5a70';ctx.font='9px Space Mono';
+    for(let i=0;i<=proj.duration;i++){
+      const x=i*pxPerSec;
+      ctx.fillStyle='#2a2a38';ctx.fillRect(x,0,1,20);
+      if(i%2===0){ctx.fillStyle='#9898b0';ctx.fillText(i+'s',x+2,13);}
+    }
+    // tracks
+    proj.layers.forEach((l,li)=>{
+      const y=20+li*TRACK_H;
+      ctx.fillStyle=li%2===0?'#13131a':'#111116';
+      ctx.fillRect(0,y,W,TRACK_H);
+      l.clips.forEach(cl=>{
+        const cx=cl.start*pxPerSec,cw=(cl.end-cl.start)*pxPerSec;
+        ctx.fillStyle=l.color+'44';ctx.fillRect(cx,y+4,cw,TRACK_H-8);
+        ctx.strokeStyle=l.color;ctx.lineWidth=1.5;ctx.strokeRect(cx,y+4,cw,TRACK_H-8);
+        ctx.fillStyle=l.color;ctx.font='bold 10px Syne';ctx.fillText(l.name,cx+6,y+22);
+        if(l.effects.length){ctx.fillStyle='rgba(255,149,0,.8)';ctx.font='9px Syne';ctx.fillText('FX:'+l.effects.length,cx+6,y+36);}
+      });
+    });
+    // playhead
+    const px=currentTime*pxPerSec;
+    ctx.strokeStyle='#ff5c00';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,H);ctx.stroke();
+    ctx.fillStyle='#ff5c00';ctx.beginPath();ctx.arc(px,20,6,0,Math.PI*2);ctx.fill();
+  },[proj,currentTime]);
+
+  // ── PROJECT OPS ───────────────────────────────────────────────────
+  function newProject(){
+    setModal({type:'newProject'});
+  }
+  function openProject(){
+    const inp=document.createElement('input');inp.type='file';inp.accept='.vulpiproj';
+    inp.onchange=e=>{
+      const f=e.target.files[0];if(!f)return;
+      const r=new FileReader();
+      r.onload=ev=>{try{const p=JSON.parse(ev.target.result);setProj(p);showToast('Project loaded','success');}catch{showToast('Invalid project file','error');}};
+      r.readAsText(f);
+    };inp.click();
+  }
+  function saveProject(){
+    const data=JSON.stringify(proj,null,2);
+    const blob=new Blob([data],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='project.vulpiproj';a.click();
+    URL.revokeObjectURL(url);
+    showToast('Project saved','success');
+  }
+
+  // ── EXPORT ────────────────────────────────────────────────────────
+  async function exportImage(){
+    const cv=canvasRef.current;if(!cv)return;
+    setModal({type:'exportImage'});
+  }
+  async function exportVideo(){
+    setModal({type:'exportVideo'});
+  }
+  async function doExportImage(fmt){
+    const cv=canvasRef.current;if(!cv)return;
+    let src=cv;
+    if(selLayer&&selLayer.effects.length){
+      selLayer.effects.forEach(fx=>{
+        src=applyWebGLEffect(src,fx.name,{...fx.params,u_time:currentTime});
+      });
+    }
+    const url=src.toDataURL(`image/${fmt||'png'}`);
+    const a=document.createElement('a');a.href=url;a.download=`export.${fmt||'png'}`;a.click();
+    showToast('Image exported','success');
+    setModal(null);
+  }
+  async function doExportVideo(){
+    showToast('Exporting video via MediaBunny...','info');
+    setModal(null);
+    // MediaBunny integration
+    try{
+      const cv=canvasRef.current;
+      const stream=cv.captureStream(proj.fps);
+      const rec=new MediaRecorder(stream,{mimeType:'video/webm'});
+      const chunks=[];
+      rec.ondataavailable=e=>chunks.push(e.data);
+      rec.onstop=()=>{
+        const blob=new Blob(chunks,{type:'video/webm'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download='export.webm';a.click();
+        URL.revokeObjectURL(url);
+        showToast('Video exported','success');
+      };
+      rec.start();
+      setCurrentTime(0);setPlaying(true);
+      setTimeout(()=>{rec.stop();setPlaying(false);},proj.duration*1000+200);
+    }catch(e){showToast('Export failed: '+e.message,'error');}
+  }
+
+  // ── UPLOAD ────────────────────────────────────────────────────────
+  function uploadAsset(type){
+    const inp=document.createElement('input');inp.type='file';
+    inp.accept=type==='image'?'image/*':'video/*';
+    inp.onchange=e=>{
+      const f=e.target.files[0];if(!f)return;
+      const r=new FileReader();
+      r.onload=ev=>{
+        const asset={id:'a'+Date.now(),name:f.name,type,src:ev.target.result,size:f.size};
+        setProj({...proj,assets:[...proj.assets,asset]});
+        showToast(`${type} uploaded`,'success');
+      };
+      r.readAsDataURL(f);
+    };inp.click();
+  }
+
+  // ── LAYER OPS ─────────────────────────────────────────────────────
+  function addLayer(type='video'){
+    const id='l'+Date.now();
+    const colors=['#ff5c00','#00d4ff','#00e676','#ffab00','#ea80fc','#ff4081'];
+    const c=colors[proj.layers.length%colors.length];
+    const l={id,name:`${type.charAt(0).toUpperCase()+type.slice(1)} ${proj.layers.length+1}`,type,color:c,visible:true,locked:false,effects:[],transform:{x:0,y:0,scale:1,rotate:0},text:null,asset:null,clips:[{id:'c'+Date.now(),start:0,end:proj.duration*.8,trackIdx:proj.layers.length}]};
+    setProj({...proj,layers:[...proj.layers,l]});
+  }
+  function removeLayer(id){setProj({...proj,layers:proj.layers.filter(l=>l.id!==id)});}
+  function duplicateLayer(id){
+    const src=proj.layers.find(l=>l.id===id);
+    const dup={...JSON.parse(JSON.stringify(src)),id:'l'+Date.now(),name:src.name+' copy'};
+    setProj({...proj,layers:[...proj.layers,dup]});
+  }
+  function updateLayer(id,upd){
+    setProj({...proj,layers:proj.layers.map(l=>l.id===id?{...l,...upd}:l)});
+  }
+  function updateTransform(id,key,val){
+    setProj({...proj,layers:proj.layers.map(l=>l.id===id?{...l,transform:{...l.transform,[key]:val}}:l)});
+  }
+
+  // ── EFFECTS ───────────────────────────────────────────────────────
+  function addEffect(layerId,effectName){
+    const def=EFFECT_DEFS[effectName];if(!def)return;
+    const layer=proj.layers.find(l=>l.id===layerId);if(!layer)return;
+    const fx={id:'fx'+Date.now(),name:effectName,label:def.label,params:{...def.params}};
+    updateLayer(layerId,{effects:[...layer.effects,fx]});
+    setFxPicker(false);
+    showToast(`Added ${def.label}`,'info');
+  }
+  function removeEffect(layerId,fxId){
+    const layer=proj.layers.find(l=>l.id===layerId);if(!layer)return;
+    updateLayer(layerId,{effects:layer.effects.filter(f=>f.id!==fxId)});
+  }
+  function updateEffectParam(layerId,fxId,param,val){
+    const layer=proj.layers.find(l=>l.id===layerId);if(!layer)return;
+    updateLayer(layerId,{effects:layer.effects.map(f=>f.id===fxId?{...f,params:{...f.params,[param]:val}}:f)});
+  }
+
+  // ── TEXT ──────────────────────────────────────────────────────────
+  function addText(){
+    const id='l'+Date.now();
+    const l={id,name:'Text Layer',type:'text',color:'#ffab00',visible:true,locked:false,effects:[],transform:{x:0,y:0,scale:1,rotate:0},text:{content:'New Text',size:48,font:'Syne',color:'#ffffff',bold:false,italic:false},asset:null,clips:[{id:'c'+Date.now(),start:0,end:5,trackIdx:proj.layers.length}]};
+    setProj({...proj,layers:[...proj.layers,l]});
+    setSelectedLayer(id);
+  }
+
+  // ── TIMELINE CLICK ────────────────────────────────────────────────
+  function onTimelineClick(e){
+    const cv=tlCanvasRef.current;if(!cv)return;
+    const r=cv.getBoundingClientRect();
+    const x=e.clientX-r.left;
+    const t=(x/cv.width)*proj.duration;
+    setCurrentTime(Math.max(0,Math.min(proj.duration,t)));
+  }
+
+  // ── MENU ──────────────────────────────────────────────────────────
+  function toggleMenu(key){setActiveMenus(m=>({...m,[key]:!m[key]}));}
+  function closeMenus(){setActiveMenus({});}
+  useEffect(()=>{const h=()=>closeMenus();document.addEventListener('click',h);return()=>document.removeEventListener('click',h);},[]);
+
+  // ── KEYBOARD ──────────────────────────────────────────────────────
+  useEffect(()=>{
+    const h=e=>{
+      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+      if(e.ctrlKey||e.metaKey){
+        if(e.key==='z'){e.preventDefault();undo();}
+        if(e.key==='y'){e.preventDefault();redo();}
+        if(e.key==='s'){e.preventDefault();saveProject();}
+        if(e.key==='d'){e.preventDefault();if(selLayer)duplicateLayer(selLayer.id);}
+        if(e.key==='c'){e.preventDefault();setProj(p=>({...p,clipboard:selLayer?JSON.parse(JSON.stringify(selLayer)):null}));}
+        if(e.key==='v'){e.preventDefault();if(proj.clipboard){const dup={...proj.clipboard,id:'l'+Date.now()};setProj(p=>({...p,layers:[...p.layers,dup]}))};}
+      }
+      if(e.key===' '){e.preventDefault();setPlaying(p=>!p);}
+      if(e.key==='Delete'||e.key==='Backspace'){if(selectedLayer)removeLayer(selectedLayer);}
+    };
+    window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h);
+  },[selectedLayer,selLayer,proj.clipboard,undo,redo]);
+
+  // ── PROP PANEL CONTENT ────────────────────────────────────────────
+  function PropSlider({label,val,min=0,max=1,step=0.01,onChange}){
+    return(<div className="prop-row">
+      <span className="prop-label">{label}</span>
+      <div className="prop-value">
+        <input type="range" className="prop-slider" min={min} max={max} step={step} value={val} onChange={e=>onChange(parseFloat(e.target.value))}/>
+        <input type="number" className="prop-num" min={min} max={max} step={step} value={val} onChange={e=>onChange(parseFloat(e.target.value))}/>
+      </div>
+    </div>);
+  }
+  function PropBool({label,val,onChange}){
+    return(<div className="prop-row">
+      <span className="prop-label">{label}</span>
+      <div className="prop-value">
+        <label className="prop-bool"><input type="checkbox" checked={val} onChange={e=>onChange(e.target.checked)}/><span className="prop-bool-track"></span></label>
+      </div>
+    </div>);
+  }
+  function PropColor({label,val,onChange}){
+    return(<div className="prop-row">
+      <span className="prop-label">{label}</span>
+      <div className="prop-value"><input type="color" className="prop-color" value={val} onChange={e=>onChange(e.target.value)}/></div>
+    </div>);
+  }
+
+  const FONTS=['Syne','Space Mono','Georgia','Impact','Courier New','Arial Black','Palatino','Trebuchet MS','Comic Sans MS'];
+
+  const formatTime=t=>{const m=Math.floor(t/60);const s=Math.floor(t%60);const f=Math.floor((t%1)*proj.fps);return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}:${String(f).padStart(2,'0')}`;};
+
+  // ── RENDER ────────────────────────────────────────────────────────
+  return(<>
+    {/* MENU BAR */}
+    <div className="menubar" onClick={e=>e.stopPropagation()}>
+      <div className="menubar-logo">VULPIX</div>
+      {/* File */}
+      <div className="menu-item">
+        <button className={`menu-btn${activeMenus.file?' active':''}`} onClick={()=>toggleMenu('file')}>File</button>
+        <div className={`dropdown${activeMenus.file?' open':''}`}>
+          <div className="dropdown-item" onClick={()=>{closeMenus();newProject();}}>{I.new} New Project <span className="shortcut">Ctrl+N</span></div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();openProject();}}>{I.open} Open Project<span className="shortcut">Ctrl+O</span></div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();saveProject();}}>{I.save} Save Project As<span className="shortcut">Ctrl+S</span></div>
+          <div className="dropdown-sep"/>
+          <div className="dropdown-item" onClick={()=>{closeMenus();exportImage();}}>{I.export} Export Image</div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();exportVideo();}}>{I.export} Export Video</div>
+          <div className="dropdown-sep"/>
+          <div className="dropdown-item" onClick={()=>{closeMenus();uploadAsset('image');}}>{I.upload} Upload Image</div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();uploadAsset('video');}}>{I.upload} Upload Video</div>
+        </div>
+      </div>
+      {/* Edit */}
+      <div className="menu-item">
+        <button className={`menu-btn${activeMenus.edit?' active':''}`} onClick={()=>toggleMenu('edit')}>Edit</button>
+        <div className={`dropdown${activeMenus.edit?' open':''}`}>
+          <div className="dropdown-item" onClick={()=>{closeMenus();undo();}}>↩ Undo<span className="shortcut">Ctrl+Z</span></div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();redo();}}>↪ Redo<span className="shortcut">Ctrl+Y</span></div>
+          <div className="dropdown-sep"/>
+          <div className="dropdown-item" onClick={()=>{closeMenus();setProj(p=>({...p,clipboard:selLayer?JSON.parse(JSON.stringify(selLayer)):null}));}}>⎘ Copy<span className="shortcut">Ctrl+C</span></div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();if(proj.clipboard){const dup={...proj.clipboard,id:'l'+Date.now()};setProj(p=>({...p,layers:[...p.layers,dup]}));}}}>⎗ Paste<span className="shortcut">Ctrl+V</span></div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();if(selLayer)duplicateLayer(selLayer.id);}}>⧉ Duplicate<span className="shortcut">Ctrl+D</span></div>
+          <div className="dropdown-sep"/>
+          <div className="dropdown-item" onClick={()=>{closeMenus();showToast('Split at playhead','info');}}>✂ Split<span className="shortcut">S</span></div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();showToast('Trim to selection','info');}}>⊠ Trim<span className="shortcut">T</span></div>
+        </div>
+      </div>
+      {/* View */}
+      <div className="menu-item">
+        <button className={`menu-btn${activeMenus.view?' active':''}`} onClick={()=>toggleMenu('view')}>View</button>
+        <div className={`dropdown${activeMenus.view?' open':''}`}>
+          <div className="dropdown-item" onClick={()=>{closeMenus();setZoom(z=>Math.min(200,z+25));}}>🔍 Zoom In</div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();setZoom(z=>Math.max(25,z-25));}}>🔍 Zoom Out</div>
+          <div className="dropdown-item" onClick={()=>{closeMenus();setZoom(100);}}>Fit to Window</div>
+        </div>
+      </div>
+      <div className="menu-spacer"/>
+      <div className="menu-status">{formatTime(currentTime)} / {formatTime(proj.duration)} · {proj.compW}×{proj.compH} · {proj.fps}fps</div>
+    </div>
+
+    {/* TOOLBAR */}
+    <div className="toolbar">
+      <div className="toolbar-group">
+        <button className={`tool-btn${tool==='select'?' active':''}`} title="Select" onClick={()=>setTool('select')}>{I.select}</button>
+        <button className={`tool-btn${tool==='text'?' active':''}`} title="Text" onClick={()=>{setTool('text');addText();}}>{I.text}</button>
+        <button className="tool-btn" title="Cut" onClick={()=>showToast('Split at playhead','info')}>{I.cut}</button>
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <button className="tool-btn" title="Undo" onClick={undo}>{I.undo}</button>
+        <button className="tool-btn" title="Redo" onClick={redo}>{I.redo}</button>
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <span className="tb-label">W</span>
+        <input className="tb-input" type="number" value={proj.compW} onChange={e=>setProj({...proj,compW:parseInt(e.target.value)||1920})}/>
+        <span className="tb-label">H</span>
+        <input className="tb-input" type="number" value={proj.compH} onChange={e=>setProj({...proj,compH:parseInt(e.target.value)||1080})}/>
+        <span className="tb-label">FPS</span>
+        <input className="tb-input" type="number" value={proj.fps} onChange={e=>setProj({...proj,fps:parseInt(e.target.value)||30})} style={{width:48}}/>
+        <span className="tb-label">DUR</span>
+        <input className="tb-input" type="number" value={proj.duration} onChange={e=>setProj({...proj,duration:parseFloat(e.target.value)||10})} style={{width:56}}/>
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <span className="tb-label">Zoom</span>
+        <input className="tb-input" type="number" value={zoom} onChange={e=>setZoom(parseInt(e.target.value)||100)} style={{width:56}}/>
+        <span className="tb-label">%</span>
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <button className="tool-btn" title="Add Video Layer" onClick={()=>addLayer('video')}>+🎬</button>
+        <button className="tool-btn" title="Add Audio Layer" onClick={()=>addLayer('audio')}>+🎵</button>
+        <button className="tool-btn" title="Add Image Layer" onClick={()=>addLayer('image')}>+🖼</button>
+        <button className="tool-btn" title="Add Text" onClick={addText}>+T</button>
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <button className="tool-btn" style={{background:'var(--accent)',color:'#fff',borderRadius:5}} onClick={exportVideo}>{I.export} Export</button>
+      </div>
+    </div>
+
+    {/* MAIN AREA */}
+    <div className="main-area">
+      {/* LEFT PANEL */}
+      <div className="left-panel">
+        <div className="panel-header">
+          <div className={`panel-tab${leftTab==='assets'?' active':''}`} onClick={()=>setLeftTab('assets')}>Assets</div>
+          <div className={`panel-tab${leftTab==='layers'?' active':''}`} onClick={()=>setLeftTab('layers')}>Layers</div>
+        </div>
+        {leftTab==='assets'&&<>
+          <div className="upload-zone" onClick={()=>uploadAsset('image')} onDragOver={e=>{e.preventDefault();e.currentTarget.classList.add('drag')}} onDragLeave={e=>e.currentTarget.classList.remove('drag')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+            <p>Drop files or <strong>click to upload</strong></p>
+          </div>
+          <div className="asset-list">
+            {proj.assets.map(a=>(
+              <div key={a.id} className="asset-item" onClick={()=>{if(selLayer)updateLayer(selLayer.id,{asset:a});}}>
+                <div className="asset-thumb">{a.type==='image'?'🖼':'🎬'}</div>
+                <div className="asset-info">
+                  <div className="asset-name">{a.name}</div>
+                  <div className="asset-meta">{a.type} · {(a.size/1024).toFixed(1)}KB</div>
+                </div>
+              </div>
+            ))}
+            {!proj.assets.length&&<div style={{padding:'16px',color:'var(--text3)',fontSize:11,textAlign:'center'}}>No assets yet. Upload an image or video.</div>}
+          </div>
+        </>}
+        {leftTab==='layers'&&<div className="asset-list">
+          {proj.layers.map((l,i)=>(
+            <div key={l.id} className={`asset-item${l.id===selectedLayer?' selected':''}`} onClick={()=>setSelectedLayer(l.id)}>
+              <div className="asset-thumb" style={{background:l.color+'22',color:l.color,fontSize:16}}>{l.type==='video'?'🎬':l.type==='audio'?'🎵':l.type==='text'?'T':'🖼'}</div>
+              <div className="asset-info">
+                <div className="asset-name">{l.name}</div>
+                <div className="asset-meta">{l.effects.length} effects · {l.type}</div>
+              </div>
+              <div className="track-icons">
+                <button className="track-icon" title="Toggle visibility" onClick={e=>{e.stopPropagation();updateLayer(l.id,{visible:!l.visible});}}>{l.visible?'👁':'🚫'}</button>
+                <button className="track-icon" title="Delete" onClick={e=>{e.stopPropagation();removeLayer(l.id);}}>🗑</button>
+              </div>
+            </div>
+          ))}
+        </div>}
+      </div>
+      <div className="resize-v"/>
+
+      {/* CENTER */}
+      <div className="center-area">
+        {compBanner&&<div className="comp-banner" onClick={()=>setModal({type:'compSettings'})}>
+          ⚡ Match composition to clip duration and aspect ratio — click to configure
+          <button style={{marginLeft:'auto',background:'none',border:'none',color:'inherit',cursor:'pointer'}} onClick={e=>{e.stopPropagation();setCompBanner(false);}}>✕</button>
+        </div>}
+        <div className="preview-area">
+          <div className="canvas-wrap">
+            <canvas ref={canvasRef} width={Math.round(proj.compW*(zoom/100)*.5)||960} height={Math.round(proj.compH*(zoom/100)*.5)||540} id="previewCanvas"/>
+          </div>
+        </div>
+        <div className="preview-controls">
+          <button className="play-btn" onClick={()=>setPlaying(p=>!p)}>{playing?I.pause:I.play}</button>
+          <span className="time-display"><span className="timecode">{formatTime(currentTime)}</span> / {formatTime(proj.duration)}</span>
+          <div className="vol-wrap">
+            <span style={{fontSize:13}}>{I.vol}</span>
+            <input type="range" className="preview-slider" min="0" max="1" step=".01" defaultValue=".8"/>
+          </div>
+        </div>
+
+        {/* TIMELINE */}
+        <div className="timeline-area">
+          <div className="timeline-header">
+            <span style={{fontSize:10,color:'var(--text3)',fontFamily:'var(--font-mono)',fontWeight:700}}>TIMELINE</span>
+            <button style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:11}} onClick={()=>setZoom(z=>Math.min(400,z+50))}>+</button>
+            <button style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:11}} onClick={()=>setZoom(z=>Math.max(25,z-50))}>−</button>
+            <span style={{fontSize:10,color:'var(--text3)',fontFamily:'var(--font-mono)'}}>{zoom}%</span>
+          </div>
+          <div className="timeline-body">
+            <div className="tracks-label">
+              {proj.layers.map(l=>(
+                <div key={l.id} className="track-label" onClick={()=>setSelectedLayer(l.id)} style={{background:l.id===selectedLayer?'rgba(255,92,0,.1)':''}}>
+                  <div className="track-color" style={{background:l.color}}/>
+                  <span className="track-name">{l.name}</span>
+                  <div className="track-icons">
+                    <button className="track-icon" onClick={e=>{e.stopPropagation();updateLayer(l.id,{visible:!l.visible});}}>{l.visible?'👁':'🚫'}</button>
+                    <button className="track-icon" onClick={e=>{e.stopPropagation();updateLayer(l.id,{locked:!l.locked});}}>{l.locked?'🔒':'🔓'}</button>
+                  </div>
+                </div>
+              ))}
+              <div className="add-track-btn" onClick={()=>addLayer()}>+ Add Track</div>
+            </div>
+            <div className="tracks-canvas-wrap" style={{position:'relative'}}>
+              <canvas ref={tlCanvasRef} width={Math.max(800,(proj.duration*80*(zoom/100)))} height={Math.max(120,proj.layers.length*52+20)} id="timelineCanvas" onClick={onTimelineClick}/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="resize-v"/>
+
+      {/* RIGHT PANEL */}
+      <div className="right-panel">
+        <div className="panel-header">
+          <div className={`panel-tab${rightTab==='effects'?' active':''}`} onClick={()=>setRightTab('effects')}>Effects</div>
+          <div className={`panel-tab${rightTab==='props'?' active':''}`} onClick={()=>setRightTab('props')}>Properties</div>
+          <div className={`panel-tab${rightTab==='text'?' active':''}`} onClick={()=>setRightTab('text')}>Text</div>
+        </div>
+        <div className="props-scroll">
+          {rightTab==='props'&&selLayer&&<>
+            <div className="prop-group">
+              <div className="prop-group-header">Transform</div>
+              <div className="prop-group-body">
+                <PropSlider label="Position X" val={selLayer.transform.x} min={-proj.compW/2} max={proj.compW/2} step={1} onChange={v=>updateTransform(selLayer.id,'x',v)}/>
+                <PropSlider label="Position Y" val={selLayer.transform.y} min={-proj.compH/2} max={proj.compH/2} step={1} onChange={v=>updateTransform(selLayer.id,'y',v)}/>
+                <PropSlider label="Scale" val={selLayer.transform.scale} min={0.01} max={5} step={0.01} onChange={v=>updateTransform(selLayer.id,'scale',v)}/>
+                <PropSlider label="Rotate" val={selLayer.transform.rotate} min={-180} max={180} step={0.1} onChange={v=>updateTransform(selLayer.id,'rotate',v)}/>
+              </div>
+            </div>
+            <div className="prop-group">
+              <div className="prop-group-header">Layer</div>
+              <div className="prop-group-body">
+                <PropBool label="Visible" val={selLayer.visible} onChange={v=>updateLayer(selLayer.id,{visible:v})}/>
+                <PropBool label="Locked" val={selLayer.locked} onChange={v=>updateLayer(selLayer.id,{locked:v})}/>
+              </div>
+            </div>
+          </>}
+
+          {rightTab==='effects'&&selLayer&&<>
+            <div className="prop-group">
+              <div className="prop-group-header">Active Effects
+                <button className="btn btn-ghost" style={{fontSize:10,padding:'2px 8px'}} onClick={()=>setFxPicker(true)}>+ Add</button>
+              </div>
+              <div className="prop-group-body">
+                {selLayer.effects.length===0&&<div style={{fontSize:11,color:'var(--text3)',padding:'8px 0'}}>No effects. Click + Add to apply a WebGL effect.</div>}
+                {selLayer.effects.map(fx=>(
+                  <div key={fx.id} style={{marginBottom:12,background:'var(--bg4)',borderRadius:5,overflow:'hidden',border:'1px solid var(--border)'}}>
+                    <div style={{display:'flex',alignItems:'center',padding:'6px 10px',background:'var(--bg2)',borderBottom:'1px solid var(--border)'}}>
+                      <span style={{flex:1,fontSize:11,fontWeight:700,color:'var(--accent2)'}}>{fx.label}</span>
+                      <button onClick={()=>removeEffect(selLayer.id,fx.id)} style={{background:'none',border:'none',color:'var(--text3)',cursor:'pointer',fontSize:12}}>✕</button>
+                    </div>
+                    <div style={{padding:8}}>
+                      {Object.entries(fx.params).filter(([k])=>typeof fx.params[k]==='number'&&!k.includes('time')).map(([k,v])=>(
+                        <PropSlider key={k} label={k.replace('u_','')} val={v} min={-10} max={10} step={.01} onChange={nv=>updateEffectParam(selLayer.id,fx.id,k,nv)}/>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <button className="add-fx-btn" onClick={()=>setFxPicker(true)}>+ Add Effect</button>
+              </div>
+            </div>
+          </>}
+
+          {rightTab==='text'&&selLayer&&selLayer.text&&<>
+            <div className="prop-group">
+              <div className="prop-group-header">Text Content</div>
+              <div className="prop-group-body">
+                <div className="prop-row">
+                  <textarea style={{width:'100%',background:'var(--bg4)',border:'1px solid var(--border)',color:'var(--text)',fontFamily:'var(--font-ui)',fontSize:13,padding:8,borderRadius:5,resize:'vertical',minHeight:60}} value={selLayer.text.content} onChange={e=>updateLayer(selLayer.id,{text:{...selLayer.text,content:e.target.value}})}/>
+                </div>
+                <PropSlider label="Size" val={selLayer.text.size||48} min={8} max={200} step={1} onChange={v=>updateLayer(selLayer.id,{text:{...selLayer.text,size:v}})}/>
+                <PropColor label="Color" val={selLayer.text.color||'#ffffff'} onChange={v=>updateLayer(selLayer.id,{text:{...selLayer.text,color:v}})}/>
+                <div className="prop-row">
+                  <span className="prop-label">Font</span>
+                  <select className="prop-select" value={selLayer.text.font||'Syne'} onChange={e=>updateLayer(selLayer.id,{text:{...selLayer.text,font:e.target.value}})}>
+                    {FONTS.map(f=><option key={f} value={f} style={{fontFamily:f}}>{f}</option>)}
+                  </select>
+                </div>
+                <PropBool label="Bold" val={selLayer.text.bold||false} onChange={v=>updateLayer(selLayer.id,{text:{...selLayer.text,bold:v}})}/>
+                <PropBool label="Italic" val={selLayer.text.italic||false} onChange={v=>updateLayer(selLayer.id,{text:{...selLayer.text,italic:v}})}/>
+              </div>
+            </div>
+          </>}
+          {rightTab==='text'&&selLayer&&!selLayer.text&&<div style={{padding:16,color:'var(--text3)',fontSize:11,textAlign:'center'}}>Select a text layer to edit text properties.</div>}
+        </div>
+      </div>
+    </div>
+
+    {/* FX PICKER MODAL */}
+    {fxPicker&&<div className="modal-overlay open" onClick={()=>setFxPicker(false)}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <h2>Add Effect</h2>
+        <div className="fx-picker-grid">
+          {Object.entries(EFFECT_DEFS).map(([k,v])=>(
+            <div key={k} className="fx-pick-item" onClick={()=>{if(selLayer)addEffect(selLayer.id,k);}}>
+              {v.label}
+            </div>
+          ))}
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-ghost" onClick={()=>setFxPicker(false)}>Cancel</button>
+        </div>
+      </div>
+    </div>}
+
+    {/* MODALS */}
+    {modal&&<div className="modal-overlay open" onClick={()=>setModal(null)}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        {modal.type==='newProject'&&<>
+          <h2>New Project</h2>
+          <div className="modal-row"><label>Name</label><input type="text" defaultValue="Untitled Project"/></div>
+          <div className="modal-row"><label>Width</label><input type="number" defaultValue={1920}/></div>
+          <div className="modal-row"><label>Height</label><input type="number" defaultValue={1080}/></div>
+          <div className="modal-row"><label>Frame Rate</label>
+            <select><option>24</option><option selected>30</option><option>60</option></select>
+          </div>
+          <div className="modal-row"><label>Duration (seconds)</label><input type="number" defaultValue={10}/></div>
+          <div className="modal-actions">
+            <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
+            <button className="btn btn-primary" onClick={()=>{setProj(INITIAL);setModal(null);showToast('New project created','success');}}>Create</button>
+          </div>
+        </>}
+        {modal.type==='exportImage'&&<>
+          <h2>Export Image</h2>
+          <div className="modal-row"><label>Format</label>
+            <select id="imgFmt"><option value="png">PNG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option></select>
+          </div>
+          <div className="modal-row"><label>Frame</label><input type="number" defaultValue={Math.floor(currentTime*proj.fps)}/></div>
+          <div className="modal-actions">
+            <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
+            <button className="btn btn-primary" onClick={()=>doExportImage(document.getElementById('imgFmt')?.value)}>Export</button>
+          </div>
+        </>}
+        {modal.type==='exportVideo'&&<>
+          <h2>Export Video</h2>
+          <div className="modal-row"><label>Format</label>
+            <select><option>WebM (VP9)</option><option>WebM (VP8)</option></select>
+          </div>
+          <div className="modal-row"><label>Quality</label>
+            <select><option>High</option><option>Medium</option><option>Low</option></select>
+          </div>
+          <div style={{padding:'10px',background:'rgba(255,92,0,.1)',borderRadius:5,fontSize:11,color:'var(--accent2)',marginBottom:8}}>
+            Export renders canvas frames via MediaBunny pipeline at {proj.fps}fps · {proj.compW}×{proj.compH}
+          </div>
+          <div className="modal-actions">
+            <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
+            <button className="btn btn-primary" onClick={doExportVideo}>Export</button>
+          </div>
+        </>}
+        {modal.type==='compSettings'&&<>
+          <h2>Composition Settings</h2>
+          <div className="modal-row"><label>Preset</label>
+            <select onChange={e=>{const[w,h]=e.target.value.split('x');setProj(p=>({...p,compW:+w,compH:+h}));}}>
+              <option value="1920x1080">1920×1080 (HD)</option>
+              <option value="3840x2160">3840×2160 (4K)</option>
+              <option value="1280x720">1280×720 (720p)</option>
+              <option value="1080x1920">1080×1920 (Vertical)</option>
+              <option value="1080x1080">1080×1080 (Square)</option>
+            </select>
+          </div>
+          <div className="modal-row"><label>Width</label><input type="number" value={proj.compW} onChange={e=>setProj(p=>({...p,compW:+e.target.value}))}/></div>
+          <div className="modal-row"><label>Height</label><input type="number" value={proj.compH} onChange={e=>setProj(p=>({...p,compH:+e.target.value}))}/></div>
+          <div className="modal-row"><label>FPS</label><input type="number" value={proj.fps} onChange={e=>setProj(p=>({...p,fps:+e.target.value}))}/></div>
+          <div className="modal-row"><label>Duration (s)</label><input type="number" value={proj.duration} onChange={e=>setProj(p=>({...p,duration:+e.target.value}))}/></div>
+          <div className="modal-actions">
+            <button className="btn btn-ghost" onClick={()=>setModal(null)}>Cancel</button>
+            <button className="btn btn-primary" onClick={()=>{setModal(null);setCompBanner(false);showToast('Composition updated','success');}}>Apply</button>
+          </div>
+        </>}
+      </div>
+    </div>}
+  </>);
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+<script src="js/vulpixism.js" onerror="void(0)"></script>
+</body>
+</html>
